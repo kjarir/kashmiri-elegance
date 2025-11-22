@@ -1,16 +1,23 @@
 import { useState, useEffect } from "react";
 import Navigation from "@/components/Layout/Navigation";
 import Footer from "@/components/Layout/Footer";
+import ProductCard from "@/components/ProductCard";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
+import { Search, SlidersHorizontal } from "lucide-react";
+import BackToTop from "@/components/ui/back-to-top";
 
 const Products = () => {
   const [showAdminPanel, setShowAdminPanel] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("all");
+  const [sortBy, setSortBy] = useState("featured");
   const { toast } = useToast();
 
   // Secret key combination: Ctrl+Shift+A
@@ -91,6 +98,7 @@ const Products = () => {
   return (
     <div className="min-h-screen bg-background">
       <Navigation />
+      <BackToTop />
       
       <section className="pt-32 pb-20 px-4">
         <div className="container mx-auto">
@@ -103,32 +111,64 @@ const Products = () => {
             </p>
           </div>
 
+          {/* Search and Filters */}
+          <div className="mb-12 space-y-6 animate-fade-in">
+            <div className="flex flex-col md:flex-row gap-4">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                <Input
+                  placeholder="Search products..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+              <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                <SelectTrigger className="w-full md:w-[200px]">
+                  <SelectValue placeholder="Category" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Products</SelectItem>
+                  <SelectItem value="pashmina">Pashmina</SelectItem>
+                  <SelectItem value="carpets">Carpets</SelectItem>
+                  <SelectItem value="kurtis">Kurtis</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={sortBy} onValueChange={setSortBy}>
+                <SelectTrigger className="w-full md:w-[200px]">
+                  <SelectValue placeholder="Sort by" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="featured">Featured</SelectItem>
+                  <SelectItem value="price-low">Price: Low to High</SelectItem>
+                  <SelectItem value="price-high">Price: High to Low</SelectItem>
+                  <SelectItem value="newest">Newest</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Category Pills */}
+            <div className="flex flex-wrap gap-3">
+              {["all", "pashmina", "carpets", "kurtis"].map((category) => (
+                <Button
+                  key={category}
+                  variant={selectedCategory === category ? "default" : "outline"}
+                  onClick={() => setSelectedCategory(category)}
+                  className={selectedCategory === category ? "bg-gradient-primary" : ""}
+                >
+                  {category === "all" ? "All Products" : category.charAt(0).toUpperCase() + category.slice(1)}
+                </Button>
+              ))}
+            </div>
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {products.map((product, index) => (
-              <div
+              <ProductCard
                 key={product.id}
-                className="group bg-card rounded-2xl overflow-hidden shadow-elegant hover:shadow-2xl transition-all duration-500 animate-scale-in"
-                style={{ animationDelay: `${index * 100}ms` }}
-              >
-                <div className="aspect-square overflow-hidden">
-                  <img
-                    src={product.image}
-                    alt={product.name}
-                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
-                  />
-                </div>
-                <div className="p-6 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium text-accent">{product.category}</span>
-                    <span className="text-lg font-bold text-primary">{product.price}</span>
-                  </div>
-                  <h3 className="text-xl font-bold text-foreground">{product.name}</h3>
-                  <p className="text-sm text-muted-foreground">{product.description}</p>
-                  <Button className="w-full bg-gradient-primary hover:opacity-90">
-                    View Details
-                  </Button>
-                </div>
-              </div>
+                {...product}
+                delay={index * 100}
+              />
             ))}
           </div>
         </div>
