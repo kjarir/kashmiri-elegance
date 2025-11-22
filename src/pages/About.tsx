@@ -1,6 +1,7 @@
 import Navigation from "@/components/Layout/Navigation";
 import Footer from "@/components/Layout/Footer";
 import { Award, Heart, Users } from "lucide-react";
+import BackToTop from "@/components/ui/back-to-top";
 
 const About = () => {
   const values = [
@@ -24,6 +25,7 @@ const About = () => {
   return (
     <div className="min-h-screen bg-background">
       <Navigation />
+      <BackToTop />
       
       <section className="pt-32 pb-20 px-4">
         <div className="container mx-auto">

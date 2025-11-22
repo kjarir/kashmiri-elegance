@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { MapPin, Phone, Mail, Clock } from "lucide-react";
+import BackToTop from "@/components/ui/back-to-top";
 
 const Contact = () => {
   const { toast } = useToast();
@@ -44,6 +45,7 @@ const Contact = () => {
   return (
     <div className="min-h-screen bg-background">
       <Navigation />
+      <BackToTop />
       
       <section className="pt-32 pb-20 px-4">
         <div className="container mx-auto">
