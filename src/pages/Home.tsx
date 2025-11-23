@@ -39,11 +39,18 @@ const Home = () => {
   useEffect(() => {
     if (!heroBgRef.current || !heroContentRef.current) return;
 
+    // Optimize GSAP for better performance
+    gsap.config({ 
+      nullTargetWarn: false,
+      force3D: true 
+    });
+
     // Enhanced parallax background - optimized for smooth performance
     gsap.to(heroBgRef.current, {
       yPercent: 50,
       scale: 1.05,
       ease: 'none',
+      force3D: true,
       scrollTrigger: {
         trigger: heroBgRef.current,
         start: 'top top',
@@ -59,6 +66,7 @@ const Home = () => {
         opacity: 0.3,
         yPercent: 15,
         ease: 'none',
+        force3D: true,
         scrollTrigger: {
           trigger: heroOverlayRef.current,
           start: 'top top',
@@ -69,71 +77,85 @@ const Home = () => {
       });
     }
 
-    // Hero content animations on load
-    const tl = gsap.timeline();
+    // Hero content animations on load - Optimized for super smooth performance
+    const tl = gsap.timeline({ 
+      defaults: { 
+        ease: 'power2.out',
+        force3D: true 
+      } 
+    });
     
+    // Set initial states with will-change for GPU acceleration
     if (heroBadgeRef.current) {
-      tl.from(heroBadgeRef.current, {
-        opacity: 0,
-        y: 30,
-        scale: 0.9,
-        duration: 0.8,
-        ease: 'back.out(1.7)',
+      gsap.set(heroBadgeRef.current, { 
+        opacity: 0, 
+        y: 20,
+        force3D: true,
+        transform: 'translate3d(0, 20px, 0)'
+      });
+      tl.to(heroBadgeRef.current, {
+        opacity: 1,
+        y: 0,
+        duration: 0.5,
+        ease: 'power2.out',
       });
     }
 
     if (heroTitleRef.current) {
-      // Get all text nodes and preserve structure
-      const titleText = heroTitleRef.current.textContent || '';
-      heroTitleRef.current.innerHTML = '';
+      // Optimized: Animate the 3 span elements directly (much faster than word-by-word)
+      const titleSpans = Array.from(heroTitleRef.current.children) as HTMLElement[];
       
-      // Split by lines first, then by words
-      const lines = titleText.split('\n').filter(line => line.trim());
-      
-      lines.forEach((line, lineIndex) => {
-        const lineDiv = document.createElement('div');
-        lineDiv.className = 'block';
-        if (lineIndex > 0) lineDiv.className += ' mt-2';
-        if (lineIndex === lines.length - 1) lineDiv.className += ' mt-4';
-        
-        const words = line.trim().split(' ').filter(word => word);
-        words.forEach((word, wordIndex) => {
-          const span = document.createElement('span');
-          span.textContent = word + (wordIndex < words.length - 1 ? ' ' : '');
-          span.style.display = 'inline-block';
-          span.style.opacity = '0';
-          span.style.transform = 'translateY(80px)';
-          lineDiv.appendChild(span);
-          
-          tl.to(span, {
-            opacity: 1,
-            y: 0,
-            duration: 0.7,
-            ease: 'power4.out',
-          }, lineIndex * 0.3 + wordIndex * 0.08);
-        });
-        
-        heroTitleRef.current?.appendChild(lineDiv);
+      // Set initial state for all spans at once using transform3d for GPU acceleration
+      gsap.set(titleSpans, { 
+        opacity: 0, 
+        y: 30,
+        force3D: true,
+        transform: 'translate3d(0, 30px, 0)'
       });
+      
+      // Animate spans with stagger - smooth and efficient
+      tl.to(titleSpans, {
+        opacity: 1,
+        y: 0,
+        duration: 0.7,
+        stagger: 0.12,
+        ease: 'power2.out',
+        force3D: true,
+      }, 0.15);
     }
 
     if (heroSubtitleRef.current) {
-      tl.from(heroSubtitleRef.current, {
-        opacity: 0,
-        y: 30,
-        duration: 0.8,
-        ease: 'power3.out',
-      }, '-=0.4');
+      gsap.set(heroSubtitleRef.current, { 
+        opacity: 0, 
+        y: 20,
+        force3D: true,
+        transform: 'translate3d(0, 20px, 0)'
+      });
+      tl.to(heroSubtitleRef.current, {
+        opacity: 1,
+        y: 0,
+        duration: 0.6,
+        ease: 'power2.out',
+        force3D: true,
+      }, '-=0.2');
     }
 
     if (heroButtonsRef.current) {
-      tl.from(heroButtonsRef.current.children, {
-        opacity: 0,
-        y: 30,
-        duration: 0.6,
-        stagger: 0.15,
-        ease: 'power3.out',
-      }, '-=0.4');
+      const buttons = Array.from(heroButtonsRef.current.children) as HTMLElement[];
+      gsap.set(buttons, { 
+        opacity: 0, 
+        y: 20,
+        force3D: true,
+        transform: 'translate3d(0, 20px, 0)'
+      });
+      tl.to(buttons, {
+        opacity: 1,
+        y: 0,
+        duration: 0.5,
+        stagger: 0.08,
+        ease: 'power2.out',
+        force3D: true,
+      }, '-=0.15');
     }
   }, []);
 
@@ -239,10 +261,28 @@ const Home = () => {
                 className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl xl:text-[120px] font-extrabold text-white leading-[1.1] tracking-[-0.02em]"
                 style={{
                   textShadow: '0 4px 30px rgba(0,0,0,0.6), 0 8px 60px rgba(0,0,0,0.4), 0 0 100px rgba(0,0,0,0.2)',
+                  transform: 'translateZ(0)',
+                  backfaceVisibility: 'hidden',
                 }}
               >
-                <span className="block">Timeless Elegance</span>
-                <span className="block mt-3 text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-light">from the</span>
+                <span 
+                  className="block" 
+                  style={{ 
+                    transform: 'translateZ(0)',
+                    backfaceVisibility: 'hidden',
+                  }}
+                >
+                  Timeless Elegance
+                </span>
+                <span 
+                  className="block mt-3 text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-light" 
+                  style={{ 
+                    transform: 'translateZ(0)',
+                    backfaceVisibility: 'hidden',
+                  }}
+                >
+                  from the
+                </span>
                 <span 
                   className="block mt-6 bg-gradient-to-r from-accent via-yellow-300 to-accent bg-clip-text text-transparent"
                   style={{
@@ -250,6 +290,8 @@ const Home = () => {
                     WebkitTextFillColor: 'transparent',
                     filter: 'drop-shadow(0 4px 30px rgba(255,200,0,0.5)) drop-shadow(0 0 40px rgba(255,200,0,0.3))',
                     textShadow: '0 0 60px rgba(255,200,0,0.4)',
+                    transform: 'translateZ(0)',
+                    backfaceVisibility: 'hidden',
                   }}
                 >
                   Heart of Kashmir

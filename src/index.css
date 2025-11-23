@@ -159,4 +159,17 @@ All colors MUST be HSL.
     image-rendering: -webkit-optimize-contrast;
     image-rendering: crisp-edges;
   }
+  
+  /* GPU acceleration for animated text */
+  h1 span, h2 span, h3 span {
+    transform: translateZ(0);
+    backface-visibility: hidden;
+  }
+  
+  /* Smooth text rendering */
+  * {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
 }
