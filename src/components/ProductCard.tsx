@@ -1,8 +1,6 @@
-import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Heart, Eye, ShoppingCart } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
+import { Eye } from "lucide-react";
 
 interface ProductCardProps {
   id: string | number;
@@ -12,7 +10,6 @@ interface ProductCardProps {
   image: string;
   description: string;
   rating?: number;
-  delay?: number;
 }
 
 const ProductCard = ({
@@ -23,30 +20,11 @@ const ProductCard = ({
   image,
   description,
   rating = 4.5,
-  delay = 0,
 }: ProductCardProps) => {
-  const [isWishlisted, setIsWishlisted] = useState(false);
-  const { toast } = useToast();
-
-  const handleWishlist = () => {
-    setIsWishlisted(!isWishlisted);
-    toast({
-      title: isWishlisted ? "Removed from Wishlist" : "Added to Wishlist",
-      description: isWishlisted ? `${name} removed` : `${name} added to your wishlist`,
-    });
-  };
-
-  const handleAddToCart = () => {
-    toast({
-      title: "Added to Cart",
-      description: `${name} has been added to your cart`,
-    });
-  };
 
   return (
     <div
-      className="group relative bg-card rounded-2xl overflow-hidden shadow-soft hover:shadow-elegant transition-all duration-500 animate-scale-in"
-      style={{ animationDelay: `${delay}ms` }}
+      className="group relative bg-card rounded-2xl overflow-hidden shadow-soft hover:shadow-elegant transition-all duration-500"
     >
       <div className="relative aspect-square overflow-hidden">
         <img
@@ -55,34 +33,19 @@ const ProductCard = ({
           className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
         />
         
-        {/* Overlay Actions */}
+        {/* Overlay Action */}
         <div className="absolute inset-0 bg-gradient-to-t from-primary/90 via-primary/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500">
-          <div className="absolute inset-0 flex items-center justify-center gap-3">
+          <div className="absolute inset-0 flex items-center justify-center">
             <Button
-              size="icon"
+              size="lg"
               variant="secondary"
-              className="rounded-full transform translate-y-4 group-hover:translate-y-0 transition-all duration-300 delay-75"
-              onClick={handleWishlist}
-            >
-              <Heart className={`h-5 w-5 ${isWishlisted ? "fill-red-500 text-red-500" : ""}`} />
-            </Button>
-            <Button
-              size="icon"
-              variant="secondary"
-              className="rounded-full transform translate-y-4 group-hover:translate-y-0 transition-all duration-300 delay-100"
+              className="rounded-full transform translate-y-4 group-hover:translate-y-0 transition-all duration-300"
               asChild
             >
               <Link to={`/products/${id}`}>
-                <Eye className="h-5 w-5" />
+                <Eye className="h-5 w-5 mr-2" />
+                View Details
               </Link>
-            </Button>
-            <Button
-              size="icon"
-              variant="secondary"
-              className="rounded-full transform translate-y-4 group-hover:translate-y-0 transition-all duration-300 delay-150"
-              onClick={handleAddToCart}
-            >
-              <ShoppingCart className="h-5 w-5" />
             </Button>
           </div>
         </div>
@@ -120,9 +83,11 @@ const ProductCard = ({
         <p className="text-sm text-muted-foreground line-clamp-2">{description}</p>
         <Button
           className="w-full bg-gradient-primary hover:opacity-90"
-          onClick={handleAddToCart}
+          asChild
         >
-          Add to Cart
+          <Link to={`/products/${id}`}>
+            View Product
+          </Link>
         </Button>
       </div>
     </div>

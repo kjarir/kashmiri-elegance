@@ -13,6 +13,7 @@ import BackToTop from "@/components/ui/back-to-top";
 import { productService } from "@/lib/db/products";
 import { adminService } from "@/lib/db/admin";
 import { Product } from "@/lib/supabase";
+import { useFadeIn, useStaggerChildren, useTextReveal } from "@/lib/animations/scroll-animations";
 
 const Products = () => {
   const [showAdminPanel, setShowAdminPanel] = useState(false);
@@ -25,6 +26,10 @@ const Products = () => {
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
   const { toast } = useToast();
+
+  // Animation refs
+  const titleRef = useTextReveal(0);
+  const productsGridRef = useStaggerChildren(0, 0.1);
 
   // Fetch products on mount
   useEffect(() => {
@@ -195,8 +200,8 @@ const Products = () => {
       
       <section className="pt-32 pb-20 px-4">
         <div className="container mx-auto">
-          <div className="text-center mb-16 animate-fade-in">
-            <h1 className="text-5xl md:text-6xl font-bold text-foreground mb-6">
+          <div className="text-center mb-16">
+            <h1 ref={titleRef} className="text-5xl md:text-6xl font-bold text-foreground mb-6">
               Our <span className="text-primary">Collections</span>
             </h1>
             <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
@@ -275,8 +280,8 @@ const Products = () => {
               )}
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {filteredProducts.map((product, index) => (
+            <div ref={productsGridRef} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {filteredProducts.map((product) => (
                 <ProductCard
                   key={product.id}
                   id={product.id}
@@ -286,7 +291,6 @@ const Products = () => {
                   image={getProductImage(product)}
                   description={product.description || ""}
                   rating={product.rating || 4.5}
-                  delay={index * 100}
                 />
               ))}
             </div>

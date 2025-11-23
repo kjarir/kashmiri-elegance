@@ -178,10 +178,30 @@ const ProductForm = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.name || !formData.category || !formData.price) {
+    // Better validation - check for empty strings and valid numbers
+    if (!formData.name?.trim()) {
       toast({
         title: "Validation Error",
-        description: "Please fill in all required fields.",
+        description: "Product name is required.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!formData.category?.trim()) {
+      toast({
+        title: "Validation Error",
+        description: "Category is required.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const priceNum = parseFloat(formData.price);
+    if (!formData.price?.trim() || isNaN(priceNum) || priceNum <= 0) {
+      toast({
+        title: "Validation Error",
+        description: "Valid price is required.",
         variant: "destructive",
       });
       return;

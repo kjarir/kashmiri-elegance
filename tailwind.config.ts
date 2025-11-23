@@ -96,6 +96,11 @@ export default {
           "0%": { backgroundPosition: "-1000px 0" },
           "100%": { backgroundPosition: "1000px 0" },
         },
+        "float": {
+          "0%, 100%": { transform: "translateY(0px) translateX(0px)", opacity: "0.3" },
+          "33%": { transform: "translateY(-30px) translateX(15px)", opacity: "0.6" },
+          "66%": { transform: "translateY(15px) translateX(-15px)", opacity: "0.4" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.3s ease-out",
@@ -106,6 +111,7 @@ export default {
         "slide-in-right": "slide-in-right 0.6s ease-out",
         "scale-in": "scale-in 0.4s ease-out",
         "shimmer": "shimmer 2s infinite linear",
+        "float": "float 20s infinite ease-in-out",
       },
       backgroundImage: {
         "gradient-primary": "var(--gradient-primary)",
