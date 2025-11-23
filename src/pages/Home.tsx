@@ -162,48 +162,46 @@ const Home = () => {
       
       {/* Hero Section - Inspired by Heaven on Earth */}
       <section className="relative h-screen w-full overflow-hidden flex items-center justify-center">
-        {/* Parallax Background Layers */}
+        {/* Parallax Background Image - Now clearly visible */}
         <div 
           ref={heroBgRef} 
-          className="absolute inset-0 w-full h-[200%] -z-10"
+          className="absolute inset-0 w-full h-[200%] z-0"
           style={{ willChange: 'transform' }}
         >
           <img
             src={heroImage}
             alt="Kashmir Valley - Heaven on Earth"
-            className="w-full h-full object-cover scale-125"
+            className="w-full h-full object-cover"
             style={{ 
-              objectPosition: "center 40%",
+              objectPosition: "center center",
               willChange: 'transform',
+              minHeight: '100%',
+              minWidth: '100%',
             }}
             loading="eager"
             fetchPriority="high"
           />
         </div>
         
-        {/* Multi-layer Gradient Overlay with Parallax - Reduced opacity to show image */}
+        {/* Light Gradient Overlay - Minimal to show image clearly */}
         <div 
           ref={heroOverlayRef}
-          className="absolute inset-0 -z-10"
+          className="absolute inset-0 z-[1]"
           style={{ willChange: 'transform, opacity' }}
         >
-          {/* Base gradient - reduced opacity to show background image */}
-          <div className="absolute inset-0 bg-gradient-to-b from-primary/75 via-primary/65 to-secondary/70"></div>
+          {/* Very light base gradient - just enough for text readability */}
+          <div className="absolute inset-0 bg-gradient-to-b from-primary/35 via-primary/25 to-secondary/35"></div>
           
-          {/* Enhanced radial gradients for depth and light - reduced opacity */}
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_800px_600px_at_30%_35%,rgba(255,255,255,0.12),transparent_70%)]"></div>
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_600px_800px_at_70%_75%,rgba(255,200,0,0.1),transparent_70%)]"></div>
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_1000px_500px_at_50%_15%,rgba(255,255,255,0.06),transparent_60%)]"></div>
+          {/* Subtle radial gradients for depth */}
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_800px_600px_at_30%_35%,rgba(255,255,255,0.05),transparent_70%)]"></div>
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_600px_800px_at_70%_75%,rgba(255,200,0,0.04),transparent_70%)]"></div>
           
-          {/* Enhanced vignette for focus - lighter */}
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_40%,rgba(0,0,0,0.25)_100%)]"></div>
-          
-          {/* Subtle color washes */}
-          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-primary/3 to-transparent"></div>
+          {/* Very light vignette */}
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_60%,rgba(0,0,0,0.1)_100%)]"></div>
         </div>
 
         {/* Enhanced floating particles - optimized for performance */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none -z-0">
+        <div className="absolute inset-0 overflow-hidden pointer-events-none z-[2]">
           {[...Array(15)].map((_, i) => (
             <div
               key={i}
@@ -223,7 +221,7 @@ const Home = () => {
         </div>
         
         {/* Hero Content */}
-        <div className="container mx-auto relative z-10 px-4">
+        <div className="container mx-auto relative z-[3] px-4">
           <div ref={heroContentRef} className="max-w-6xl mx-auto text-center space-y-10">
             {/* Badge */}
             <div 
@@ -307,7 +305,7 @@ const Home = () => {
         </div>
         
         {/* Enhanced Scroll indicator */}
-        <div className="absolute bottom-16 left-1/2 -translate-x-1/2 z-10">
+        <div className="absolute bottom-16 left-1/2 -translate-x-1/2 z-[3]">
           <div className="flex flex-col items-center gap-3 group cursor-pointer">
             <span className="text-white/80 text-xs font-semibold tracking-[0.2em] uppercase group-hover:text-white transition-colors">
               Scroll to Explore
@@ -319,8 +317,8 @@ const Home = () => {
         </div>
 
         {/* Decorative elements */}
-        <div className="absolute top-20 left-10 w-32 h-32 bg-accent/10 rounded-full blur-3xl -z-0"></div>
-        <div className="absolute bottom-20 right-10 w-40 h-40 bg-primary/10 rounded-full blur-3xl -z-0"></div>
+        <div className="absolute top-20 left-10 w-32 h-32 bg-accent/10 rounded-full blur-3xl z-[2]"></div>
+        <div className="absolute bottom-20 right-10 w-40 h-40 bg-primary/10 rounded-full blur-3xl z-[2]"></div>
       </section>
 
       {/* Trust Badges */}
