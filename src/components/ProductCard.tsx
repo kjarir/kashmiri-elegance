@@ -5,7 +5,7 @@ import { Heart, Eye, ShoppingCart } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface ProductCardProps {
-  id: number;
+  id: string | number;
   name: string;
   category: string;
   price: string;

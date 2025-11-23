@@ -3,13 +3,16 @@ import Navigation from "@/components/Layout/Navigation";
 import Footer from "@/components/Layout/Footer";
 import ProductCard from "@/components/ProductCard";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Search, SlidersHorizontal } from "lucide-react";
+import { Search, SlidersHorizontal, Loader2 } from "lucide-react";
 import BackToTop from "@/components/ui/back-to-top";
+import { productService } from "@/lib/db/products";
+import { adminService } from "@/lib/db/admin";
+import { Product } from "@/lib/supabase";
 
 const Products = () => {
   const [showAdminPanel, setShowAdminPanel] = useState(false);
@@ -18,7 +21,98 @@ const Products = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [sortBy, setSortBy] = useState("featured");
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [isAdmin, setIsAdmin] = useState(false);
   const { toast } = useToast();
+
+  // Fetch products on mount
+  useEffect(() => {
+    loadProducts();
+    checkAdminStatus();
+    
+    // Listen to auth state changes
+    const { data: { subscription } } = adminService.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_IN' || event === 'SIGNED_OUT') {
+        checkAdminStatus();
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
+
+  // Check admin status
+  const checkAdminStatus = async () => {
+    try {
+      const admin = await adminService.isAdmin();
+      setIsAdmin(admin);
+    } catch (error) {
+      setIsAdmin(false);
+    }
+  };
+
+  // Load products
+  const loadProducts = async () => {
+    try {
+      setLoading(true);
+      let fetchedProducts: Product[] = [];
+
+      if (searchQuery.trim()) {
+        fetchedProducts = await productService.search(searchQuery);
+      } else if (selectedCategory === "all") {
+        fetchedProducts = await productService.getAll();
+      } else {
+        fetchedProducts = await productService.getByCategory(selectedCategory);
+      }
+
+      // Sort products
+      if (sortBy === "price-low") {
+        fetchedProducts.sort((a, b) => a.price - b.price);
+      } else if (sortBy === "price-high") {
+        fetchedProducts.sort((a, b) => b.price - a.price);
+      } else if (sortBy === "newest") {
+        fetchedProducts.sort((a, b) => {
+          const dateA = new Date(a.created_at || 0).getTime();
+          const dateB = new Date(b.created_at || 0).getTime();
+          return dateB - dateA;
+        });
+      } else if (sortBy === "featured") {
+        fetchedProducts.sort((a, b) => {
+          if (a.featured && !b.featured) return -1;
+          if (!a.featured && b.featured) return 1;
+          return 0;
+        });
+      }
+
+      setProducts(fetchedProducts);
+    } catch (error: any) {
+      console.error("Error loading products:", error);
+      
+      // Check if it's a table not found error
+      if (error?.code === 'TABLE_NOT_FOUND' || error?.isTableNotFound || error?.code === 'PGRST116' || error?.message?.includes('relation') || (error as any)?.status === 404) {
+        toast({
+          title: "Database Setup Required",
+          description: "The products table doesn't exist yet. Please run the database schema from database/schema.sql in your Supabase SQL Editor.",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: error?.message || "Failed to load products. Please try again later.",
+          variant: "destructive",
+        });
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Reload products when filters change
+  useEffect(() => {
+    loadProducts();
+  }, [searchQuery, selectedCategory, sortBy]);
 
   // Secret key combination: Ctrl+Shift+A
   useEffect(() => {
@@ -36,64 +130,59 @@ const Products = () => {
   const handleAdminLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // TODO: Implement Supabase authentication here
-    toast({
-      title: "Authentication Required",
-      description: "Please connect Supabase to enable admin authentication.",
-      variant: "destructive",
-    });
+    try {
+      await adminService.signIn(email, password);
+      toast({
+        title: "Success",
+        description: "Admin login successful!",
+      });
+      setShowAdminPanel(false);
+      setEmail("");
+      setPassword("");
+      await checkAdminStatus();
+    } catch (error: any) {
+      let errorMessage = "Invalid email or password.";
+      
+      if (error.message?.includes("Invalid login credentials")) {
+        errorMessage = "Invalid email or password. Please check your credentials.";
+      } else if (error.message?.includes("Access denied") || error.message?.includes("Admin privileges")) {
+        errorMessage = "This account doesn't have admin privileges. Please contact an administrator.";
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      toast({
+        title: "Login Failed",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    }
   };
 
-  const products = [
-    {
-      id: 1,
-      name: "Premium Pashmina Shawl",
-      category: "Pashmina",
-      price: "₹25,000",
-      image: "https://images.unsplash.com/photo-1601924994987-69e26d50dc26?w=800&q=80",
-      description: "100% pure pashmina wool, handwoven by master artisans",
-    },
-    {
-      id: 2,
-      name: "Kashmiri Silk Carpet",
-      category: "Carpets",
-      price: "₹1,50,000",
-      image: "https://images.unsplash.com/photo-1600166898405-da9535204843?w=800&q=80",
-      description: "Hand-knotted silk carpet with intricate traditional patterns",
-    },
-    {
-      id: 3,
-      name: "Embroidered Kurti Set",
-      category: "Kurtis",
-      price: "₹8,500",
-      image: "https://images.unsplash.com/photo-1583391265946-7e9aabb48bdc?w=800&q=80",
-      description: "Traditional Kashmiri embroidery on fine cotton",
-    },
-    {
-      id: 4,
-      name: "Luxury Pashmina Stole",
-      category: "Pashmina",
-      price: "₹18,000",
-      image: "https://images.unsplash.com/photo-1601924994987-69e26d50dc26?w=800&q=80",
-      description: "Lightweight and elegant, perfect for any occasion",
-    },
-    {
-      id: 5,
-      name: "Royal Persian Design Carpet",
-      category: "Carpets",
-      price: "₹2,00,000",
-      image: "https://images.unsplash.com/photo-1600166898405-da9535204843?w=800&q=80",
-      description: "Masterpiece carpet with Persian-inspired motifs",
-    },
-    {
-      id: 6,
-      name: "Designer Anarkali Kurti",
-      category: "Kurtis",
-      price: "₹12,000",
-      image: "https://images.unsplash.com/photo-1583391265946-7e9aabb48bdc?w=800&q=80",
-      description: "Elegant Anarkali style with intricate thread work",
-    },
-  ];
+  // Format price to Indian Rupee format
+  const formatPrice = (price: number): string => {
+    return new Intl.NumberFormat('en-IN', {
+      style: 'currency',
+      currency: 'INR',
+      maximumFractionDigits: 0,
+    }).format(price);
+  };
+
+  // Get primary image for product
+  const getProductImage = (product: Product): string => {
+    if (product.images && product.images.length > 0) {
+      return product.images[0];
+    }
+    return product.image_url || "https://images.unsplash.com/photo-1601924994987-69e26d50dc26?w=800&q=80";
+  };
+
+  // Filter and sort products
+  const filteredProducts = products.filter((product) => {
+    if (selectedCategory !== "all" && product.category.toLowerCase() !== selectedCategory.toLowerCase()) {
+      return false;
+    }
+    return true;
+  });
 
   return (
     <div className="min-h-screen bg-background">
@@ -162,15 +251,42 @@ const Products = () => {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {products.map((product, index) => (
-              <ProductCard
-                key={product.id}
-                {...product}
-                delay={index * 100}
-              />
-            ))}
-          </div>
+          {loading ? (
+            <div className="flex items-center justify-center py-20">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+          ) : filteredProducts.length === 0 ? (
+            <div className="text-center py-20 space-y-4">
+              <p className="text-xl text-muted-foreground">No products found.</p>
+              {products.length === 0 && (
+                <div className="max-w-md mx-auto p-6 bg-muted rounded-lg">
+                  <p className="text-sm text-muted-foreground mb-2">
+                    If you just set up the database, you may need to:
+                  </p>
+                  <ol className="text-sm text-muted-foreground list-decimal list-inside space-y-1">
+                    <li>Run the schema from <code className="bg-background px-1 rounded">database/schema.sql</code> in Supabase SQL Editor</li>
+                    <li>Add some products to the database</li>
+                  </ol>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {filteredProducts.map((product, index) => (
+                <ProductCard
+                  key={product.id}
+                  id={product.id}
+                  name={product.name}
+                  category={product.category}
+                  price={formatPrice(product.price)}
+                  image={getProductImage(product)}
+                  description={product.description || ""}
+                  rating={product.rating || 4.5}
+                  delay={index * 100}
+                />
+              ))}
+            </div>
+          )}
         </div>
       </section>
 
@@ -179,6 +295,9 @@ const Products = () => {
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="text-2xl font-bold text-center">Admin Login</DialogTitle>
+            <DialogDescription className="text-center">
+              Enter your admin credentials to access the admin panel
+            </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleAdminLogin} className="space-y-4 mt-4">
             <div className="space-y-2">

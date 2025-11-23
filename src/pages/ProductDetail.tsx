@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import Navigation from "@/components/Layout/Navigation";
 import Footer from "@/components/Layout/Footer";
 import { Button } from "@/components/ui/button";
@@ -15,76 +15,118 @@ import {
   Shield,
   RotateCcw,
   ChevronRight,
+  Loader2,
 } from "lucide-react";
 import BackToTop from "@/components/ui/back-to-top";
+import { productService } from "@/lib/db/products";
+import { Product } from "@/lib/supabase";
 
 const ProductDetail = () => {
   const { id } = useParams();
+  const navigate = useNavigate();
   const { toast } = useToast();
   const [selectedImage, setSelectedImage] = useState(0);
   const [quantity, setQuantity] = useState(1);
   const [isWishlisted, setIsWishlisted] = useState(false);
+  const [product, setProduct] = useState<Product | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [relatedProducts, setRelatedProducts] = useState<Product[]>([]);
 
-  // Mock product data
-  const product = {
-    id: parseInt(id || "1"),
-    name: "Premium Kashmiri Pashmina Shawl",
-    category: "Pashmina",
-    price: "₹25,000",
-    originalPrice: "₹32,000",
-    rating: 4.8,
-    reviews: 127,
-    inStock: true,
-    description:
-      "An exquisite handwoven pashmina shawl crafted by master artisans in Kashmir. Made from 100% pure pashmina wool sourced from the high-altitude regions of the Himalayas, this shawl represents the pinnacle of traditional Kashmiri craftsmanship.",
-    features: [
-      "100% Pure Pashmina Wool",
-      "Hand-woven by Master Artisans",
-      "Traditional Kashmiri Patterns",
-      "Incredibly Soft & Warm",
-      "Lightweight & Breathable",
-      "Natural Fiber, Eco-Friendly",
-    ],
-    specifications: {
-      Material: "100% Pure Pashmina Wool",
-      Dimensions: "200cm x 100cm",
-      Weight: "250 grams",
-      Origin: "Kashmir, India",
-      "Care Instructions": "Dry clean only",
-      Weave: "Traditional Hand-woven",
-    },
-    images: [
-      "https://images.unsplash.com/photo-1601924994987-69e26d50dc26?w=800&q=80",
-      "https://images.unsplash.com/photo-1583391265946-7e9aabb48bdc?w=800&q=80",
-      "https://images.unsplash.com/photo-1600166898405-da9535204843?w=800&q=80",
-    ],
+  useEffect(() => {
+    if (id) {
+      loadProduct();
+    }
+  }, [id]);
+
+  const loadProduct = async () => {
+    if (!id) return;
+    
+    try {
+      setLoading(true);
+      const fetchedProduct = await productService.getById(id);
+      
+      if (!fetchedProduct) {
+        toast({
+          title: "Product Not Found",
+          description: "The product you're looking for doesn't exist.",
+          variant: "destructive",
+        });
+        navigate("/products");
+        return;
+      }
+
+      setProduct(fetchedProduct);
+
+      // Load related products
+      if (fetchedProduct.category) {
+        const related = await productService.getByCategory(fetchedProduct.category);
+        setRelatedProducts(related.filter(p => p.id !== id).slice(0, 3));
+      }
+    } catch (error) {
+      console.error("Error loading product:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load product. Please try again later.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const relatedProducts = [
-    {
-      id: 2,
-      name: "Luxury Pashmina Stole",
-      price: "₹18,000",
-      image: "https://images.unsplash.com/photo-1601924994987-69e26d50dc26?w=400&q=80",
-    },
-    {
-      id: 3,
-      name: "Embroidered Pashmina",
-      price: "₹28,000",
-      image: "https://images.unsplash.com/photo-1583391265946-7e9aabb48bdc?w=400&q=80",
-    },
-    {
-      id: 4,
-      name: "Royal Pashmina Set",
-      price: "₹45,000",
-      image: "https://images.unsplash.com/photo-1600166898405-da9535204843?w=400&q=80",
-    },
-  ];
+  // Format price to Indian Rupee format
+  const formatPrice = (price: number): string => {
+    return new Intl.NumberFormat('en-IN', {
+      style: 'currency',
+      currency: 'INR',
+      maximumFractionDigits: 0,
+    }).format(price);
+  };
+
+  // Get product images
+  const getProductImages = (product: Product): string[] => {
+    if (product.images && product.images.length > 0) {
+      return product.images;
+    }
+    if (product.image_url) {
+      return [product.image_url];
+    }
+    return ["https://images.unsplash.com/photo-1601924994987-69e26d50dc26?w=800&q=80"];
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (!product) {
+    return null;
+  }
+
+  const productImages = getProductImages(product);
+  const productData = {
+    id: product.id,
+    name: product.name,
+    category: product.category,
+    price: formatPrice(product.price),
+    originalPrice: product.original_price ? formatPrice(product.original_price) : undefined,
+    rating: product.rating || 4.8,
+    reviews: product.reviews_count || 0,
+    inStock: product.in_stock ?? true,
+    description: product.description || "",
+    features: product.features || [],
+    specifications: product.specifications || {},
+    images: productImages,
+  };
+
 
   const handleAddToCart = () => {
     toast({
       title: "Added to Cart",
-      description: `${quantity} x ${product.name} added to your cart`,
+      description: `${quantity} x ${productData.name} added to your cart`,
     });
   };
 
@@ -122,7 +164,7 @@ const ProductDetail = () => {
               Products
             </Link>
             <ChevronRight className="h-4 w-4" />
-            <span className="text-foreground">{product.category}</span>
+            <span className="text-foreground">{productData.category}</span>
           </div>
 
           <div className="grid lg:grid-cols-2 gap-12 mb-20">
@@ -130,13 +172,13 @@ const ProductDetail = () => {
             <div className="space-y-4 animate-slide-in-left">
               <div className="aspect-square rounded-2xl overflow-hidden bg-muted shadow-elegant">
                 <img
-                  src={product.images[selectedImage]}
-                  alt={product.name}
+                  src={productData.images[selectedImage]}
+                  alt={productData.name}
                   className="w-full h-full object-cover hover:scale-110 transition-transform duration-700"
                 />
               </div>
               <div className="grid grid-cols-3 gap-4">
-                {product.images.map((image, index) => (
+                {productData.images.map((image, index) => (
                   <button
                     key={index}
                     onClick={() => setSelectedImage(index)}
@@ -148,7 +190,7 @@ const ProductDetail = () => {
                   >
                     <img
                       src={image}
-                      alt={`${product.name} ${index + 1}`}
+                      alt={`${productData.name} ${index + 1}`}
                       className="w-full h-full object-cover"
                     />
                   </button>
@@ -160,10 +202,10 @@ const ProductDetail = () => {
             <div className="space-y-6 animate-slide-in-right">
               <div>
                 <Badge className="mb-3 bg-accent text-accent-foreground">
-                  {product.category}
+                  {productData.category}
                 </Badge>
                 <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-4">
-                  {product.name}
+                  {productData.name}
                 </h1>
                 <div className="flex items-center gap-4 mb-4">
                   <div className="flex items-center gap-2">
@@ -172,7 +214,7 @@ const ProductDetail = () => {
                         <Star
                           key={i}
                           className={`h-5 w-5 ${
-                            i < Math.floor(product.rating)
+                            i < Math.floor(productData.rating)
                               ? "fill-accent text-accent"
                               : "text-muted-foreground"
                           }`}
@@ -180,24 +222,28 @@ const ProductDetail = () => {
                       ))}
                     </div>
                     <span className="text-sm text-muted-foreground">
-                      {product.rating} ({product.reviews} reviews)
+                      {productData.rating} ({productData.reviews} reviews)
                     </span>
                   </div>
                 </div>
               </div>
 
               <div className="flex items-baseline gap-3">
-                <span className="text-4xl font-bold text-primary">{product.price}</span>
-                <span className="text-2xl text-muted-foreground line-through">
-                  {product.originalPrice}
-                </span>
-                <Badge variant="secondary" className="bg-accent/10 text-accent">
-                  Save 22%
-                </Badge>
+                <span className="text-4xl font-bold text-primary">{productData.price}</span>
+                {productData.originalPrice && (
+                  <>
+                    <span className="text-2xl text-muted-foreground line-through">
+                      {productData.originalPrice}
+                    </span>
+                    <Badge variant="secondary" className="bg-accent/10 text-accent">
+                      Save {Math.round(((product.original_price! - product.price) / product.original_price!) * 100)}%
+                    </Badge>
+                  </>
+                )}
               </div>
 
               <p className="text-lg text-muted-foreground leading-relaxed">
-                {product.description}
+                {productData.description}
               </p>
 
               {/* Quantity Selector */}
@@ -272,27 +318,35 @@ const ProductDetail = () => {
               </TabsList>
               <TabsContent value="features" className="space-y-4">
                 <h3 className="text-2xl font-bold text-foreground mb-4">Key Features</h3>
-                <ul className="grid md:grid-cols-2 gap-4">
-                  {product.features.map((feature, index) => (
-                    <li key={index} className="flex items-center gap-3">
-                      <div className="w-2 h-2 rounded-full bg-primary shrink-0"></div>
-                      <span className="text-muted-foreground">{feature}</span>
-                    </li>
-                  ))}
-                </ul>
+                {productData.features.length > 0 ? (
+                  <ul className="grid md:grid-cols-2 gap-4">
+                    {productData.features.map((feature, index) => (
+                      <li key={index} className="flex items-center gap-3">
+                        <div className="w-2 h-2 rounded-full bg-primary shrink-0"></div>
+                        <span className="text-muted-foreground">{feature}</span>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="text-muted-foreground">No features listed.</p>
+                )}
               </TabsContent>
               <TabsContent value="specifications" className="space-y-4">
                 <h3 className="text-2xl font-bold text-foreground mb-4">
                   Product Specifications
                 </h3>
-                <div className="grid md:grid-cols-2 gap-4">
-                  {Object.entries(product.specifications).map(([key, value]) => (
-                    <div key={key} className="flex justify-between py-3 border-b border-border">
-                      <span className="font-medium text-foreground">{key}</span>
-                      <span className="text-muted-foreground">{value}</span>
-                    </div>
-                  ))}
-                </div>
+                {Object.keys(productData.specifications).length > 0 ? (
+                  <div className="grid md:grid-cols-2 gap-4">
+                    {Object.entries(productData.specifications).map(([key, value]) => (
+                      <div key={key} className="flex justify-between py-3 border-b border-border">
+                        <span className="font-medium text-foreground">{key}</span>
+                        <span className="text-muted-foreground">{String(value)}</span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-muted-foreground">No specifications listed.</p>
+                )}
               </TabsContent>
               <TabsContent value="reviews" className="space-y-6">
                 <h3 className="text-2xl font-bold text-foreground mb-4">Customer Reviews</h3>
@@ -324,32 +378,39 @@ const ProductDetail = () => {
           {/* Related Products */}
           <div className="animate-fade-in">
             <h2 className="text-3xl font-bold text-foreground mb-8">You May Also Like</h2>
-            <div className="grid md:grid-cols-3 gap-8">
-              {relatedProducts.map((relatedProduct, index) => (
-                <Link
-                  key={relatedProduct.id}
-                  to={`/products/${relatedProduct.id}`}
-                  className="group animate-scale-in"
-                  style={{ animationDelay: `${index * 100}ms` }}
-                >
-                  <Card className="overflow-hidden hover:shadow-elegant transition-all duration-500 border-0">
-                    <div className="aspect-square overflow-hidden">
-                      <img
-                        src={relatedProduct.image}
-                        alt={relatedProduct.name}
-                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
-                      />
-                    </div>
-                    <div className="p-4">
-                      <h3 className="font-bold text-foreground group-hover:text-primary transition-colors">
-                        {relatedProduct.name}
-                      </h3>
-                      <p className="text-primary font-semibold mt-2">{relatedProduct.price}</p>
-                    </div>
-                  </Card>
-                </Link>
-              ))}
-            </div>
+            {relatedProducts.length > 0 ? (
+              <div className="grid md:grid-cols-3 gap-8">
+                {relatedProducts.map((relatedProduct, index) => {
+                  const relatedImages = getProductImages(relatedProduct);
+                  return (
+                    <Link
+                      key={relatedProduct.id}
+                      to={`/products/${relatedProduct.id}`}
+                      className="group animate-scale-in"
+                      style={{ animationDelay: `${index * 100}ms` }}
+                    >
+                      <Card className="overflow-hidden hover:shadow-elegant transition-all duration-500 border-0">
+                        <div className="aspect-square overflow-hidden">
+                          <img
+                            src={relatedImages[0]}
+                            alt={relatedProduct.name}
+                            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                          />
+                        </div>
+                        <div className="p-4">
+                          <h3 className="font-bold text-foreground group-hover:text-primary transition-colors">
+                            {relatedProduct.name}
+                          </h3>
+                          <p className="text-primary font-semibold mt-2">{formatPrice(relatedProduct.price)}</p>
+                        </div>
+                      </Card>
+                    </Link>
+                  );
+                })}
+              </div>
+            ) : (
+              <p className="text-muted-foreground">No related products found.</p>
+            )}
           </div>
         </div>
       </section>
