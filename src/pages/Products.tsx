@@ -134,12 +134,16 @@ const Products = () => {
       await adminService.signIn(email, password);
       toast({
         title: "Success",
-        description: "Admin login successful!",
+        description: "Admin login successful! Redirecting to dashboard...",
       });
       setShowAdminPanel(false);
       setEmail("");
       setPassword("");
       await checkAdminStatus();
+      // Redirect to admin dashboard
+      setTimeout(() => {
+        window.location.href = "/admin/dashboard";
+      }, 1000);
     } catch (error: any) {
       let errorMessage = "Invalid email or password.";
       

@@ -1,10 +1,12 @@
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Menu, X } from "lucide-react";
-import { useState } from "react";
+import { Menu, X, Settings } from "lucide-react";
+import { useState, useEffect } from "react";
+import { adminService } from "@/lib/db/admin";
 
 const Navigation = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   const location = useLocation();
 
   const links = [
@@ -15,6 +17,28 @@ const Navigation = () => {
   ];
 
   const isActive = (path: string) => location.pathname === path;
+
+  useEffect(() => {
+    checkAdminStatus();
+
+    // Listen to auth changes
+    const { data: { subscription } } = adminService.onAuthStateChange(() => {
+      checkAdminStatus();
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
+
+  const checkAdminStatus = async () => {
+    try {
+      const admin = await adminService.isAdmin();
+      setIsAdmin(admin);
+    } catch {
+      setIsAdmin(false);
+    }
+  };
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-md border-b border-border shadow-soft">
@@ -37,6 +61,17 @@ const Navigation = () => {
                 {link.label}
               </Link>
             ))}
+            {isAdmin && (
+              <Link
+                to="/admin/dashboard"
+                className={`text-sm font-medium transition-colors hover:text-primary flex items-center gap-2 ${
+                  location.pathname.startsWith("/admin") ? "text-primary" : "text-foreground"
+                }`}
+              >
+                <Settings className="h-4 w-4" />
+                Admin
+              </Link>
+            )}
           </div>
 
           {/* Mobile Menu Button */}
@@ -66,6 +101,18 @@ const Navigation = () => {
                   {link.label}
                 </Link>
               ))}
+              {isAdmin && (
+                <Link
+                  to="/admin/dashboard"
+                  onClick={() => setIsOpen(false)}
+                  className={`text-sm font-medium transition-colors hover:text-primary flex items-center gap-2 ${
+                    location.pathname.startsWith("/admin") ? "text-primary" : "text-foreground"
+                  }`}
+                >
+                  <Settings className="h-4 w-4" />
+                  Admin Dashboard
+                </Link>
+              )}
             </div>
           </div>
         )}
